@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <title>REST Security with OAuth2 Authentication, JWT, and Spring Security</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+        <script src="js/app.js"></script>
+
+        <style>
+            .hidden {
+               display: none
+            }
+            .avatar-img {
+                max-height:75px;
+                max-width:75px;
+                height:auto;
+                width:auto;
+            }
+            .gap {
+                margin-top: 20px;
+            }
+        </style>
+
+    </head>
+
+
+    <body>
+
+        <div>
+            <h1>Demo: Securing REST Endpoints with OAuth2, JWT, and Spring Security</h1>
+        </div>
+
+        <div id = "loginDivId" class = "nonAuthenticatedState">
+                <h3>Sign in with:</h3>
+                <span>
+                    <img onclick="appModel.login('google')" src="/img/google_32.png" alt="Login with Google" />
+                    <img onclick="appModel.login('github')" src="/img/github_32.png" alt="Login with GitHub" />
+                </span>
+        </div>
+
+
+
+        <div id = "userDivId" class = "hidden authenticatedState">
+
+            <div id="userAvatar"></div>
+
+            <p><b>Logged in as:</b> <i><span id="userNameId"></span></i></p>
+
+            <div>
+                <button onClick="appModel.logout()">Logout</button>
+            </div>
+
+            <div>
+                <p><b>Set this Authorization Header parameter for REST calls:</b></p>
+                <span id="jwtId"></span>
+            </div>
+
+        </div>
+
+        <div class="top">
+            <h3 id="restCallLabelId"></h3>
+            <button onClick="appModel.jwtEcho()">JWT Echo</button>
+        </div>
+
+    </body>
+
+
+</html>
