@@ -1,16 +1,25 @@
+= am-rest
+v0.0.2, 2017-02-13
+:toc:
+:numbered:
+:source-highlighter: coderay
+
 == REST Security
 
-The application delegates user authentication to a third party OAuth2 authentication provider
-such as Google or Github. Once authenticated, the application provides the client with a
-Signed JSON Web Token (JWS). The client includes the JWS with each call to a REST endpoint.
+User authentication is delegated to a third party OAuth2 identity providers
+such as Google or Github. Once authenticated, the server provides the client with a
+Signed JSON Web Token (JWS). The client includes this JWS with each subsequent
+call to a secured REST endpoint.
 
-User identity and authorized roles extracted from a validated JWS are used to determine whether
-access is permitted to a secured endpoint.  The server maintains no state regarding a
-whitelisted or blacklisted JWS. Instead, the server relies on:
+The server checks for the existence of a valid token in the `Authorization` header
+on each REST endpoint request. User identity and authorized roles are extracted
+directly from the validated token. This information is used to determine whether
+access is permitted to the secured endpoint. The server maintains no state regarding
+whitelisted or blacklisted tokens. Instead, the server relies on:
 
-* secure transport of the JWS (ex TLS)
+* secure transport of the JWS (use HTTPS)
 * secure handling of the JWS on the client (ex cookie)
-* periodic JWS expiry (forcing the client to re-authenticate for new token)
+* periodic JWS expiry (forcing the client to re-authenticate for a new token)
 
 The application has two distinct process flows:
 
@@ -20,8 +29,8 @@ The application has two distinct process flows:
 
 == Authentication
 
-Authentication is implemented using the OAuth 2.0 https://tools.ietf.org/html/rfc6749#section-4[authorization code grant] protocol
-relying on third party authorization providers such as Google and Github. If the end user consents, the third party authorization
+Authentication is implemented using the OAuth 2.0 https://tools.ietf.org/html/rfc6749#section-4[authorization code grant] protocol.
+The server relies on third party identity providers such as Google and Github. If the end user consents, the third party identity
 provider is also used as resource server for retrieving personal details such as name and email address.
 
 The following is an example of the OAuth2 authorization code grant message flow with two extra steps:
@@ -31,28 +40,29 @@ The following is an example of the OAuth2 authorization code grant message flow 
 
 image::amRestBackEndDoc/OAuthGrantTypeAuthorizationCode.png[title="Overview of the OAuth2 message flow"]
 
-=== Registering with Authorization Providers
+=== Registering with an Identity Provider
 
-The application must register with the third party authorization provider before the provider will accept
-requests for auth codes and tokens for the applications. Registering involves the creation of a:
+The application must register with the third party identity provider before the provider will accept
+requests for authorization codes and authorization tokens for the applications. Registering involves the creation of a:
 
 * `clientId` to identify the application (similar to a username, but for the application)
 * `clientSecret` the "password" to be used with the `clientId`
-* `scope` to identify the set of resources the application wants permission to access
+* `scope` to identify the set of resources the application requests permission to access
 * a list of allowable domains from which the application may request authorization tokens
-* a callback uri which the authorization server will send back to the client as a redirect when returning the auth code
+* a callback uri which the identity server will send back to the client as a redirect when returning the authorization code
 
-==== Google Authorization Provider
+==== Google Identity Provider
 
 The https://developers.google.com/identity/protocols/OAuth2[Google Identity Platform documentation]
-provides an overview of how to use Google as an Authorization Provider.
+provides an overview of how to use Google as an identity provider.
 
 Credentials are created through the https://console.developers.google.com/apis/credentials?project=asi-data[Google Developers Console].
-The project can be created or selected from a drop-down in the top-left corner.
+First the appropriate project should be created or selected from the drop-down in the top-left corner:
 
 image::amRestBackEndDoc/GoogleDeveloperConsoleProjectSelection.png[]
 
-A new project was created named `a4-am` with a generated id of `a4-am-155202`. From within the project:
+For this code sample, a new project was created named `a4-am` with a generated id of `a4-am-155202`. From within the project,
+the following steps were taken to a new set of credentials for the application:
 
 * click `Create credentials`
 * choose `OAuth Client Id` for the type of credential to create
@@ -97,11 +107,11 @@ security:
                 userInfoUri: https://api.github.com/user
 ----
 
-<1> the `userAuthorizationUri` is the uri of the authorization server that the client will be redirected
+<1> the `userAuthorizationUri` is the uri of the identity provider that the client will be redirected
 to in order to request an authorization code. When the client redirects, it will receive an authorization
 code upon authentication and be redirected back to the application server
 
-<2> the `accessTokenUri` is the authorization server uri which the application server will contact
+<2> the `accessTokenUri` is the identity provider uri which the application server will contact
 with an authorization code in order to receive an authorization token. The request for a token
 requires the application's `clientId` and `clientSecret` to identify the application along with the
 `authCode` provided by the client.
@@ -132,7 +142,7 @@ The `spring-security-oath2` library was not used since it introduced a layer of 
 components, unknown/lightly documented library) for something that could be implemented relatively easily using an http client.
 The application server also performs some non-standard behaviour such as looking up user information and
 returning a JWT. However, since Spring Security is being used for authorization checks, revisiting the
-potential use of `spring-security-oath2` may be warranted.
+potential use of `spring-security-oath2` is warranted.
 
 === Spring Security Configuration
 
@@ -150,13 +160,13 @@ potential use of `spring-security-oath2` may be warranted.
 
 === Usage
 
-To authenticate, the client makes a call to the application server with the url specifying the authorization provider to use:
+To authenticate, the client makes a call to the application server with the url selecting the identity provider to use:
 
 * {{baseUrl}}/login/google
 * {{baseUrl}}/login/facebook
 * {{baseUrl}}/login/github
 
-This will return the JWS which should be included in the `Authorization` header parameter for all
+On a successful flow, a JWS will be returned.  This JWS should be included in the `Authorization` header parameter for all
 subsequent REST calls to the server.
 
 === References
